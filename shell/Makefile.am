@@ -39,6 +39,8 @@ evince_SOURCES=				\
 	ev-bookmark-action.c		\
 	ev-application.c		\
 	ev-application.h		\
+        ev-dualscreen.h                 \
+        ev-dualscreen.c                 \
 	ev-file-monitor.h		\
 	ev-file-monitor.c		\
 	ev-history.c			\
