@@ -34,12 +34,14 @@
 #include "ev-utils.h"
 #include "ev-sidebar.h"
 #include "ev-sidebar-thumbnails.h"
+#include "ev-presentation-timer.h"
 
 struct _EvDSCWindowPrivate {
 	GtkWidget       *main_box;
 	GtkWidget       *menubar;
 	GtkWidget       *sidebar;
 	GtkWidget       *notesview;
+	GtkWidget       *timer;
 	GtkWidget       *spinner;
 	GtkWidget       *presentation_window;
 	GtkWidget       *overview_scrolled_window;
@@ -138,6 +140,8 @@ ev_dscwindow_sidebar_visibility_cb (GtkWidget *sidebar)
 static void
 ev_dscwindow_set_page (EvDSCWindow *ev_dscwindow, gint page)
 {
+	if((ev_dscwindow->priv->page == 0) && (page == 1))
+		ev_presentation_timer_start (EV_PRESENTATION_TIMER (ev_dscwindow->priv->timer));
 	if(!(ev_dscwindow->priv->page == page)) {
 		ev_dscwindow->priv->page = page;
 		if(ev_document_model_get_page (ev_dscwindow->priv->model) != page)
@@ -146,6 +150,7 @@ ev_dscwindow_set_page (EvDSCWindow *ev_dscwindow, gint page)
 			ev_document_model_set_page(ev_dscwindow->priv->notes_model, page);
 		if(ev_view_presentation_get_current_page (EV_VIEW_PRESENTATION(ev_dscwindow->priv->presentation_view)) != page);
 			ev_view_presentation_set_page (EV_VIEW_PRESENTATION(ev_dscwindow->priv->presentation_view), page);
+		ev_presentation_timer_set_page (EV_PRESENTATION_TIMER(ev_dscwindow->priv->timer), page);
 	}
 }
 
@@ -153,6 +158,7 @@ static void
 ev_dscwindow_presentation_time_cb (EvDSCWindow *ev_dscwindow)
 {
 	gint time = gtk_spin_button_get_value_as_int (GTK_SPIN_BUTTON (ev_dscwindow->priv->spinner));
+	ev_presentation_timer_set_time (EV_PRESENTATION_TIMER (ev_dscwindow->priv->timer),time);
 	if (ev_dscwindow->priv->metadata)
 		ev_metadata_set_double (ev_dscwindow->priv->metadata, "presentation-time", time);
 }
@@ -279,6 +285,8 @@ ev_dscwindow_set_presentation   (EvDSCWindow    *ev_dscwindow,
 			  "notify::page",
 			  G_CALLBACK (ev_dscwindow_presentation_page_changed_cb),
 			  ev_dscwindow);
+	ev_presentation_timer_set_pages (EV_PRESENTATION_TIMER(ev_dscwindow->priv->timer),
+		ev_document_get_n_pages (document));
 	/* Wait for windows to get shown before moving them */
 	while(gtk_events_pending())
 		gtk_main_iteration();
@@ -383,16 +391,23 @@ ev_dscwindow_init (EvDSCWindow *ev_dscwindow)
 
 	GtkToolItem *b_spinner = gtk_tool_item_new ();
 	GtkWidget* alignment = gtk_alignment_new (0.0f, 0.5f, 1.0f, 0.1f);
+	GtkAdjustment *timer_adjust = gtk_adjustment_new (-1.0, -1.0,
+		MAX_PRESENTATION_TIME, 1.0, 10.0, 10.0);
+	ev_dscwindow->priv->spinner = gtk_spin_button_new (timer_adjust, 1.0, 0);
 	g_signal_connect_swapped (ev_dscwindow->priv->spinner, "value-changed",
 	        G_CALLBACK (ev_dscwindow_presentation_time_cb), ev_dscwindow);
 	gtk_container_add (GTK_CONTAINER (b_spinner), alignment);
 	gtk_container_add (GTK_CONTAINER (alignment), ev_dscwindow->priv->spinner);
+	gtk_tool_item_set_tooltip_text (b_spinner,
+	        _("To enable timer, set presentation timer to expected time in minutes. Timer starts by changing from first slide to second one. Value -1 means disabled."));
 	gtk_toolbar_insert (GTK_TOOLBAR (toolbar), b_spinner, -1);
 
 	gtk_container_add (GTK_CONTAINER (expander), toolbar);
 
 	GtkWidget *hpan = gtk_hpaned_new ();
 	gtk_paned_pack1 (GTK_PANED(hpan), expander, FALSE, TRUE);
+	ev_dscwindow->priv->timer = ev_presentation_timer_new ();
+	gtk_paned_pack2 (GTK_PANED(hpan),ev_dscwindow->priv->timer, FALSE, FALSE);
 
 	gtk_box_pack_end (GTK_BOX (vbox), hpan, FALSE, TRUE, 0);
 	gtk_container_add (GTK_CONTAINER (ev_dscwindow), vbox);
