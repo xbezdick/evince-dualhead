@@ -85,6 +85,10 @@ void		ev_window_open_document                  (EvWindow       *ev_window,
                                                           const gchar    *search_string);
 void            ev_window_open_recent_view               (EvWindow       *ev_window);
 gboolean	ev_window_is_empty	                 (const EvWindow *ev_window);
+void            ev_window_run_presentation               (EvWindow       *ev_window);
+void            ev_window_stop_presentation              (EvWindow       *ev_window,
+                                                          gboolean        unfullscreen_window);
+
 void		ev_window_print_range                    (EvWindow       *ev_window,
                                                           int             first_page,
                                                           int		 last_page);

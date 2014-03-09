@@ -42,6 +42,7 @@ properties/ev-properties-main.c
 properties/ev-properties-view.c
 shell/ev-annotation-properties-dialog.c
 shell/ev-application.c
+shell/ev-dualscreen.c
 shell/ev-history.c
 shell/ev-history-action.c
 shell/ev-keyring.c

@@ -35,6 +35,7 @@ enum {
 	PROP_0,
 	PROP_DOCUMENT,
 	PROP_CURRENT_PAGE,
+	PROP_PAGE,
 	PROP_ROTATION,
 	PROP_INVERTED_COLORS
 };
@@ -545,6 +546,15 @@ ev_view_presentation_set_current_page (EvViewPresentation *pview,
 	} else {
 		ev_view_presentation_update_current_page (pview, page);
 	}
+}
+
+void
+ev_view_presentation_set_page (EvViewPresentation *pview, gint new_page)
+{
+	if (new_page >= ev_document_get_n_pages (pview->document))
+	ev_view_presentation_set_end (pview);
+	else if (new_page != pview->current_page)
+		ev_view_presentation_update_current_page (pview, new_page);
 }
 
 void
@@ -1399,6 +1409,9 @@ ev_view_presentation_set_property (GObject      *object,
 	case PROP_CURRENT_PAGE:
 		ev_view_presentation_set_current_page (pview, g_value_get_uint (value));
 		break;
+	case PROP_PAGE:
+		pview->current_page = g_value_get_uint (value);
+		break;
 	case PROP_ROTATION:
                 ev_view_presentation_set_rotation (pview, g_value_get_uint (value));
 		break;
@@ -1497,6 +1510,13 @@ ev_view_presentation_class_init (EvViewPresentationClass *klass)
 							      G_PARAM_WRITABLE |
 							      G_PARAM_CONSTRUCT_ONLY |
                                                               G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property (gobject_class,
+					 PROP_PAGE,
+					 g_param_spec_uint ("page",
+							    "Current Page",
+							    "The current page",
+							    0, G_MAXUINT, 0,
+								G_PARAM_READWRITE));
 	g_object_class_install_property (gobject_class,
 					 PROP_CURRENT_PAGE,
 					 g_param_spec_uint ("current-page",
